@@ -91,9 +91,7 @@ pipeline {
         }
     }
 
-    post {
-        // Define post-build actions if any, such as cleanup, notifications, etc.
-    }
+   
 }
 
 def readFileFromGit(String filePath) {
