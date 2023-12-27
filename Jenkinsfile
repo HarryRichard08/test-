@@ -123,7 +123,7 @@ Please review the build and attached changes.
 Best regards,
 The Jenkins Team
 """,
-                        to: 'harry.r@aimleap.com', // Send the email to the specified address
+                        to: 'harrylmrichard@gmail.com', // Send the email to the specified address
                         mimeType: 'text/plain'
                     )
                 } catch (Exception e) {
