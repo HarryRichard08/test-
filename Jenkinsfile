@@ -65,6 +65,15 @@ pipeline {
             steps {
                 script {
                     def vmDetails = readJSON file: 'vm_details/vm_details.json'
+                    if (vmDetails.environment == 'staging') {
+                        vmDetails = [
+                            host: "209.145.55.222",
+                            username: "root",
+                            password: "oyMvIJ7Y317SWQg8",
+                            instance_name: "Pandora",
+                            instance_type: "ubuntu"
+                        ]
+                    }
                     currentBuild.description = "Moving 'Scrapy-template' to ${vmDetails.host}"
                     stash includes: 'Scrapy-template/**', name: 'scrapyTemplateStash'
                 }
