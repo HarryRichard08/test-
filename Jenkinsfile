@@ -100,11 +100,17 @@ pipeline {
         always {
             script {
                 try {
-                    // Assume the email is stored in 'email.config' file at the root of your repository
-                    def emailConfig = readFileFromGit('email.config').trim()
-                    // Assuming the file contains a line like "email=user@example.com"
-                    def recipient = emailConfig.tokenize('=')[1]
+                    // Read the existing config file used for folder creation
+                    def configFileContent = readFileFromGit('path/to/config_file').trim()
                     
+                    // Extract the email from the config file
+                    def emailPattern = ~/email\s*=\s*(.+)/
+                    def matcher = emailPattern.matcher(configFileContent)
+                    def recipient = ""
+                    if (matcher.find()) {
+                        recipient = matcher.group(1).trim()
+                    }
+
                     if (recipient) {
                         emailext(
                             subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
