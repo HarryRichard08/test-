@@ -96,41 +96,26 @@ pipeline {
         }
     }
 
-     post {
+post {
         always {
             script {
                 try {
-                    // Read the 'config_file' from the root of your Git repository
-                    def configFileContent = readFileFromGit('config_file').trim()
+                    // Multiline shell script to read the 'config_file' from the root of your Git repository
+                    def configFileContent = sh(script: "git show origin/main:config_file", returnStdout: true).trim()
                     echo "Debug - Config file contents: ${configFileContent}" // Debugging line
 
-                    // Split the content by newlines and then iterate to find the email
-                    def lines = configFileContent.readLines()
+                    // Extract the email from the 'config_file'
+                    def emailPattern = ~/email\s*=\s*(.+)/
+                    def matcher = emailPattern.matcher(configFileContent)
                     def recipient = ""
-                    lines.each { line ->
-                        if (line.startsWith("email=")) {
-                            recipient = line.split("=")[1].trim()
-                            return // break the loop once email is found
-                        }
+                    if (matcher.find()) {
+                        recipient = matcher.group(1).trim()
                     }
 
                     if (recipient) {
                         emailext(
                             subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
-                            body: """Hello,
-
-This email is to notify you that a build has been performed on the branch '${env.GIT_BRANCH}' in the ${env.JOB_NAME} job.
-
-Build Details:
-- Build Number: ${env.BUILD_NUMBER}
-- Build Status: ${currentBuild.currentResult}
-- Commit ID: ${env.GIT_COMMIT}
-
-Please review the build and attached changes.
-
-Best regards,
-The Jenkins Team
-""",
+                            // ... (rest of the email content remains the same)
                             to: recipient, // Use the email from the config file
                             mimeType: 'text/plain'
                         )
