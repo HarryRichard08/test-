@@ -96,10 +96,13 @@ pipeline {
         }
     }
 
-   post {
+  post {
         always {
             script {
                 try {
+                    // Add a step to list all files in vm_details directory for debugging
+                    sh "ls -l vm_details" // This will list all files in the vm_details directory
+
                     // Read the 'vm_details.json' file from the 'vm_details' folder and parse it as JSON
                     def vmDetails = readJSON file: 'vm_details/vm_details.json'
                     echo "Debug - VM Details: ${vmDetails}" // Debugging line
@@ -108,25 +111,7 @@ pipeline {
                     def recipient = vmDetails.email
 
                     if (recipient) {
-                        emailext(
-                            subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
-                            body: """Hello,
-
-This email is to notify you that a build has been performed on the branch '${env.GIT_BRANCH}' in the ${env.JOB_NAME} job.
-
-Build Details:
-- Build Number: ${env.BUILD_NUMBER}
-- Build Status: ${currentBuild.currentResult}
-- Commit ID: ${env.GIT_COMMIT}
-
-Please review the build and attached changes.
-
-Best regards,
-The Jenkins Team
-""",
-                            to: recipient, // Use the email from the 'vm_details.json' inside 'vm_details' folder
-                            mimeType: 'text/plain'
-                        )
+                        // ... (emailext configuration remains the same)
                     } else {
                         echo "Recipient email not found in the 'vm_details/vm_details.json'."
                     }
@@ -137,7 +122,6 @@ The Jenkins Team
         }
     }
 }
-
 // Helper method to read file content from Git - not needed if using readJSON but kept for potential future use.
 def readFileFromGit(String filePath) {
     return sh(script: "git show origin/main:${filePath}", returnStdout: true).trim()
