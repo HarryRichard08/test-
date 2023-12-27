@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout Code from GitHub') {
             steps {
                 checkout([$class: 'GitSCM', 
-                          branches: [[name: '*/main']], 
+                          branches: [[name: '*/main']], // Corrected from 'master' to 'main'
                           userRemoteConfigs: [
                               [url: 'https://github.com/HarryRichard08/Scrappy-template.git',
                                credentialsId: 'test']
@@ -104,9 +104,8 @@ pipeline {
         always {
             script {
                 try {
-                    // You can still read the 'vm_details.json' file if you need information from it
                     def vmDetails = readJSON file: 'vm_details/vm_details.json'
-                    echo "Debug - VM Details: ${vmDetails}" // Debugging line
+                    echo "Debug - VM Details: ${vmDetails}"
 
                     emailext(
                         subject: "Build Notification for Branch '${env.BRANCH_NAME}'",
@@ -136,5 +135,5 @@ The Jenkins Team
 }
 
 def readFileFromGit(String filePath) {
-    return sh(script: "git show origin/master:${filePath}", returnStdout: true).trim()
+    return sh(script: "git show origin/main:${filePath}", returnStdout: true).trim() // Corrected from 'master' to 'main'
 }
