@@ -103,13 +103,15 @@ pipeline {
                     // Read the 'config_file' from the root of your Git repository
                     def configFileContent = readFileFromGit('config_file').trim()
                     echo "Debug - Config file contents: ${configFileContent}" // Debugging line
-                    
-                    // Extract the email from the 'config_file'
-                    def emailPattern = ~/email\s*=\s*(.+)/
-                    def matcher = emailPattern.matcher(configFileContent)
+
+                    // Split the content by newlines and then iterate to find the email
+                    def lines = configFileContent.readLines()
                     def recipient = ""
-                    if (matcher.find()) {
-                        recipient = matcher.group(1).trim()
+                    lines.each { line ->
+                        if (line.startsWith("email=")) {
+                            recipient = line.split("=")[1].trim()
+                            return // break the loop once email is found
+                        }
                     }
 
                     if (recipient) {
@@ -129,7 +131,7 @@ Please review the build and attached changes.
 Best regards,
 The Jenkins Team
 """,
-                            to: recipient, // Use the email from the 'config_file'
+                            to: recipient, // Use the email from the config file
                             mimeType: 'text/plain'
                         )
                     } else {
