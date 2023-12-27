@@ -102,6 +102,7 @@ pipeline {
                 try {
                     // Read the 'config_file' from the root of your Git repository
                     def configFileContent = readFileFromGit('config_file').trim()
+                    echo "Debug - Config file contents: ${configFileContent}" // Debugging line
                     
                     // Extract the email from the 'config_file'
                     def emailPattern = ~/email\s*=\s*(.+)/
