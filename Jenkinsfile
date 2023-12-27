@@ -96,18 +96,21 @@ pipeline {
         }
     }
 
-    post {
+   post {
         always {
             script {
                 try {
-                    def configFileContent = sh(script: "git show origin/main:config_file", returnStdout: true).trim()
-                    echo "Debug - Config file contents: ${configFileContent}"
+                    // Read the entire 'config_file' from the root of your Git repository
+                    def configFileContent = sh(script: "cat config_file", returnStdout: true).trim()
+                    echo "Debug - Full Config file contents: ${configFileContent}" // Debugging line
 
+                    // Split the content by commas and then iterate to find the email
                     def configs = configFileContent.split(',')
                     def recipient = ""
                     configs.each { config ->
                         if (config.trim().startsWith("email=")) {
                             recipient = config.split("=")[1].trim()
+                            echo "Debug - Found recipient: ${recipient}" // Debugging line
                         }
                     }
 
@@ -128,7 +131,7 @@ Please review the build and attached changes.
 Best regards,
 The Jenkins Team
 """,
-                            to: recipient,
+                            to: recipient, // Use the email from the config file
                             mimeType: 'text/plain'
                         )
                     } else {
