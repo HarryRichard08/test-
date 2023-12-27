@@ -8,7 +8,6 @@ pipeline {
             }
         }
 
-    stages {
         stage('Checkout Code from GitHub') {
             steps {
                 checkout([$class: 'GitSCM', 
@@ -66,26 +65,15 @@ pipeline {
             steps {
                 script {
                     def vmDetails = readJSON file: 'vm_details/vm_details.json'
-
-                    if (vmDetails.environment == 'staging') {
-                        vmDetails = [
-                            host: "209.145.55.222",
-                            username: "root",
-                            password: "oyMvIJ7Y317SWQg8",
-                            instance_name: "Pandora",
-                            instance_type: "ubuntu"
-                        ]
-                    }
-
                     currentBuild.description = "Moving 'Scrapy-template' to ${vmDetails.host}"
                     stash includes: 'Scrapy-template/**', name: 'scrapyTemplateStash'
                 }
             }
         }
 
-       stage('Copy File to Remote Server') {
+        stage('Copy File to Remote Server') {
             steps {
-                unstash 'scrapyTemplateStash'
+                unstash name: 'scrapyTemplateStash'
                 script {
                     def vmDetails = readJSON file: 'vm_details/vm_details.json'
                     def remoteHost = vmDetails.host
@@ -103,11 +91,11 @@ pipeline {
         }
     }
 
-  post {
+    post {
         always {
             script {
                 try {
-                    // Add a step to list all files in vm_details directory for debugging
+                    // Add a step to list all files in the vm_details directory for debugging
                     sh "ls -l vm_details" // This will list all files in the vm_details directory
 
                     // Read the 'vm_details.json' file from the 'vm_details' folder and parse it as JSON
@@ -118,7 +106,25 @@ pipeline {
                     def recipient = vmDetails.email
 
                     if (recipient) {
-                        // ... (emailext configuration remains the same)
+                        emailext(
+                            subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
+                            body: """Hello,
+
+This email is to notify you that a build has been performed on the branch '${env.GIT_BRANCH}' in the ${env.JOB_NAME} job.
+
+Build Details:
+- Build Number: ${env.BUILD_NUMBER}
+- Build Status: ${currentBuild.currentResult}
+- Commit ID: ${env.GIT_COMMIT}
+
+Please review the build and attached changes.
+
+Best regards,
+The Jenkins Team
+""",
+                            to: recipient, // Use the email from the 'vm_details.json' inside 'vm_details' folder
+                            mimeType: 'text/plain'
+                        )
                     } else {
                         echo "Recipient email not found in the 'vm_details/vm_details.json'."
                     }
@@ -129,7 +135,7 @@ pipeline {
         }
     }
 }
-// Helper method to read file content from Git - not needed if using readJSON but kept for potential future use.
+
 def readFileFromGit(String filePath) {
     return sh(script: "git show origin/main:${filePath}", returnStdout: true).trim()
 }
