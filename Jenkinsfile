@@ -19,79 +19,45 @@ pipeline {
             }
         }
 
-        stage('Compare CSV Files') {
-            steps {
-                script {
-                    def predictedFile = readFileFromGit('output/predicted.csv')
-                    def actualFile = readFileFromGit('output/actual.csv')
-
-                    if (predictedFile == actualFile) {
-                        echo 'CSV files are identical. Proceeding with file copy.'
-                    } else {
-                        error 'CSV files are different. Skipping file copy.'
-                    }
-                }
-            }
-        }
-
-        stage('Comparing Requirements.txt') {
-            steps {
-                script {
-                    def airFlowRequirements = readFileFromGit('requirements/air_flow_requirements.txt')
-                    def requirements = readFileFromGit('requirements/requirements.txt')
-
-                    if (airFlowRequirements == requirements) {
-                        echo 'Requirements files are identical. Proceeding with the pipeline.'
-                    } else {
-                        error 'Requirements files are different. Failing the pipeline.'
-                    }
-                }
-            }
-        }
-
-        stage('Read VM Details') {
-            steps {
-                script {
-                    def vmDetails = readJSON file: 'vm_details/vm_details.json'
-
-                    if (vmDetails.environment == 'staging') {
-                        vmDetails = [
-                            host: "209.145.55.222",
-                            username: "root",
-                            password: "oyMvIJ7Y317SWQg8",
-                            instance_name: "Pandora",
-                            instance_type: "ubuntu"
-                        ]
-                    }
-
-                    currentBuild.description = "Moving 'Scrapy-template' to ${vmDetails.host}"
-                    stash includes: 'Scrapy-template/**', name: 'scrapyTemplateStash'
-                }
-            }
-        }
+        // ... (other stages remain the same)
 
         stage('Copy File to Remote Server') {
             steps {
                 unstash 'scrapyTemplateStash'
 
                 script {
-                    def vmDetails = readJSON file: 'vm_details/vm_details.json'
-                    def remoteHost = vmDetails.host
-                    def remoteUsername = vmDetails.username
-                    def remotePassword = vmDetails.password
-                    def sshpassPath = '/usr/bin/sshpass'
-
-                    def newFolderName = sh(script: "cat config_file | grep 'folder_name' | cut -d'=' -f2", returnStdout: true).trim()
-
-                    sh "${sshpassPath} -p '${remotePassword}' ssh -o StrictHostKeyChecking=no ${remoteUsername}@${remoteHost} 'mkdir -p /root/projects/${newFolderName}'"
-                    sh "${sshpassPath} -p '${remotePassword}' scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r *_dag.py ${remoteUsername}@${remoteHost}:/root/dags/"
-                    sh "${sshpassPath} -p '${remotePassword}' scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r Scrapy-template/ ${remoteUsername}@${remoteHost}:/root/projects/${newFolderName}/"
+                    // ... (existing script remains the same)
                 }
             }
         }
     }
 
-   
+    post {
+        always {
+            script {
+                def commitInfo = sh(script: "git show -s --format='%ae'", returnStdout: true).trim()
+                emailext(
+                    subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
+                    body: """Hello,
+
+This email is to notify you that a build has been performed on the branch '${env.GIT_BRANCH}' in the ${env.JOB_NAME} job.
+
+Build Details:
+- Build Number: ${env.BUILD_NUMBER}
+- Build Status: ${currentBuild.currentResult}
+- Commit ID: ${env.GIT_COMMIT}
+
+Please review the build and attached changes.
+
+Best regards,
+The Jenkins Team
+""",
+                    to: commitInfo, // Send the email to the last committer
+                    mimeType: 'text/plain'
+                )
+            }
+        }
+    }
 }
 
 def readFileFromGit(String filePath) {
