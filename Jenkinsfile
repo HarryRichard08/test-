@@ -101,7 +101,7 @@ pipeline {
             script {
                 try {
                     // Read the entire 'config_file' from the root of your Git repository
-                    def configFileContent = sh(script: "cat config_file", returnStdout: true).trim()
+                    def configFileContent = sh(script: "cat config_file", returnStdout: true)
                     echo "Debug - Full Config file contents: ${configFileContent}" // Debugging line
 
                     // Split the content by commas and then iterate to find the email
