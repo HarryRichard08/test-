@@ -96,26 +96,46 @@ pipeline {
         }
     }
 
-post {
+pipeline {
+    agent any
+
+    // ... (other stages remain the same)
+
+    post {
         always {
             script {
                 try {
-                    // Multiline shell script to read the 'config_file' from the root of your Git repository
+                    // Use a shell script to read the 'config_file' from the root of your Git repository
                     def configFileContent = sh(script: "git show origin/main:config_file", returnStdout: true).trim()
                     echo "Debug - Config file contents: ${configFileContent}" // Debugging line
 
-                    // Extract the email from the 'config_file'
-                    def emailPattern = ~/email\s*=\s*(.+)/
-                    def matcher = emailPattern.matcher(configFileContent)
+                    // Split the content by commas and then iterate to find the email
+                    def configs = configFileContent.split(',')
                     def recipient = ""
-                    if (matcher.find()) {
-                        recipient = matcher.group(1).trim()
+                    configs.each { config ->
+                        if (config.trim().startsWith("email=")) {
+                            recipient = config.split("=")[1].trim()
+                            return // break the loop once email is found
+                        }
                     }
 
                     if (recipient) {
                         emailext(
                             subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
-                            // ... (rest of the email content remains the same)
+                            body: """Hello,
+
+This email is to notify you that a build has been performed on the branch '${env.GIT_BRANCH}' in the ${env.JOB_NAME} job.
+
+Build Details:
+- Build Number: ${env.BUILD_NUMBER}
+- Build Status: ${currentBuild.currentResult}
+- Commit ID: ${env.GIT_COMMIT}
+
+Please review the build and attached changes.
+
+Best regards,
+The Jenkins Team
+""",
                             to: recipient, // Use the email from the config file
                             mimeType: 'text/plain'
                         )
@@ -129,6 +149,12 @@ post {
         }
     }
 }
+
+// This method is not used anymore but kept here just in case you need it for other purposes.
+def readFileFromGit(String filePath) {
+    return sh(script: "git show origin/main:${filePath}", returnStdout: true).trim()
+}
+
 
 def readFileFromGit(String filePath) {
     return sh(script: "git show origin/main:${filePath}", returnStdout: true).trim()
