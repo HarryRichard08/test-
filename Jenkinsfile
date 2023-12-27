@@ -35,10 +35,11 @@ pipeline {
     post {
         always {
             script {
-                def commitInfo = sh(script: "git show -s --format='%ae'", returnStdout: true).trim()
-                emailext(
-                    subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
-                    body: """Hello,
+                try {
+                    def commitInfo = sh(script: "git show -s --format='%ae'", returnStdout: true).trim()
+                    emailext(
+                        subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
+                        body: """Hello,
 
 This email is to notify you that a build has been performed on the branch '${env.GIT_BRANCH}' in the ${env.JOB_NAME} job.
 
@@ -52,9 +53,12 @@ Please review the build and attached changes.
 Best regards,
 The Jenkins Team
 """,
-                    to: commitInfo, // Send the email to the last committer
-                    mimeType: 'text/plain'
-                )
+                        to: commitInfo, // Send the email to the last committer
+                        mimeType: 'text/plain'
+                    )
+                } catch (Exception e) {
+                    echo "Failed to send email: ${e.getMessage()}"
+                }
             }
         }
     }
