@@ -96,14 +96,14 @@ pipeline {
         }
     }
 
-    post {
+     post {
         always {
             script {
                 try {
-                    // Read the existing config file used for folder creation
-                    def configFileContent = readFileFromGit('config_file').trim() // Adjust if your config file has a different name
+                    // Read the 'config_file' from the root of your Git repository
+                    def configFileContent = readFileFromGit('config_file').trim()
                     
-                    // Extract the email from the config file
+                    // Extract the email from the 'config_file'
                     def emailPattern = ~/email\s*=\s*(.+)/
                     def matcher = emailPattern.matcher(configFileContent)
                     def recipient = ""
@@ -128,11 +128,11 @@ Please review the build and attached changes.
 Best regards,
 The Jenkins Team
 """,
-                            to: recipient, // Use the email from the config file
+                            to: recipient, // Use the email from the 'config_file'
                             mimeType: 'text/plain'
                         )
                     } else {
-                        echo "Recipient email not found in the configuration."
+                        echo "Recipient email not found in the 'config_file'."
                     }
                 } catch (Exception e) {
                     echo "Failed to send email: ${e.getMessage()}"
