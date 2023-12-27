@@ -100,19 +100,12 @@ pipeline {
         always {
             script {
                 try {
-                    // Read the entire 'config_file' from the root of your Git repository
-                    def configFileContent = sh(script: "cat config_file", returnStdout: true)
-                    echo "Debug - Full Config file contents: ${configFileContent}" // Debugging line
+                    // Read the 'vm_details.json' file from the 'vm_details' folder and parse it as JSON
+                    def vmDetails = readJSON file: 'vm_details/vm_details.json'
+                    echo "Debug - VM Details: ${vmDetails}" // Debugging line
 
-                    // Split the content by commas and then iterate to find the email
-                    def configs = configFileContent.split(',')
-                    def recipient = ""
-                    configs.each { config ->
-                        if (config.trim().startsWith("email=")) {
-                            recipient = config.split("=")[1].trim()
-                            echo "Debug - Found recipient: ${recipient}" // Debugging line
-                        }
-                    }
+                    // Extract the email from the parsed JSON
+                    def recipient = vmDetails.email
 
                     if (recipient) {
                         emailext(
@@ -131,20 +124,21 @@ Please review the build and attached changes.
 Best regards,
 The Jenkins Team
 """,
-                            to: recipient, // Use the email from the config file
+                            to: recipient, // Use the email from the 'vm_details.json' inside 'vm_details' folder
                             mimeType: 'text/plain'
                         )
                     } else {
-                        echo "Recipient email not found in the 'config_file'."
+                        echo "Recipient email not found in the 'vm_details/vm_details.json'."
                     }
                 } catch (Exception e) {
-                    echo "Failed to send email: ${e.getMessage()}"
+                    echo "Failed to read VM details file or send email: ${e.getMessage()}"
                 }
             }
         }
     }
 }
 
+// Helper method to read file content from Git - not needed if using readJSON but kept for potential future use.
 def readFileFromGit(String filePath) {
     return sh(script: "git show origin/main:${filePath}", returnStdout: true).trim()
 }
