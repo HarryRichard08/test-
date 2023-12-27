@@ -4,7 +4,13 @@ pipeline {
     stages {
         stage('Checkout Code from GitHub') {
             steps {
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/HarryRichard08/Scrappy-template.git']]])
+                checkout([$class: 'GitSCM', 
+                          branches: [[name: '*/main']], 
+                          userRemoteConfigs: [
+                              [url: 'https://github.com/HarryRichard08/Scrappy-template.git',
+                               credentialsId: 'test']
+                          ]
+                ])
             }
         }
 
@@ -94,10 +100,15 @@ pipeline {
         always {
             script {
                 try {
-                    def commitInfo = sh(script: "git show -s --format='%ae'", returnStdout: true).trim()
-                    emailext(
-                        subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
-                        body: """Hello,
+                    // Assume the email is stored in 'email.config' file at the root of your repository
+                    def emailConfig = readFileFromGit('email.config').trim()
+                    // Assuming the file contains a line like "email=user@example.com"
+                    def recipient = emailConfig.tokenize('=')[1]
+                    
+                    if (recipient) {
+                        emailext(
+                            subject: "Build Notification for Branch '${env.GIT_BRANCH}'",
+                            body: """Hello,
 
 This email is to notify you that a build has been performed on the branch '${env.GIT_BRANCH}' in the ${env.JOB_NAME} job.
 
@@ -111,9 +122,12 @@ Please review the build and attached changes.
 Best regards,
 The Jenkins Team
 """,
-                        to: commitInfo, // Send the email to the last committer
-                        mimeType: 'text/plain'
-                    )
+                            to: recipient, // Use the email from the config file
+                            mimeType: 'text/plain'
+                        )
+                    } else {
+                        echo "Recipient email not found in the configuration."
+                    }
                 } catch (Exception e) {
                     echo "Failed to send email: ${e.getMessage()}"
                 }
