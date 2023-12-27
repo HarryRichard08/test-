@@ -2,6 +2,13 @@ pipeline {
     agent any
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs() // This will clean the workspace before checking out the code
+            }
+        }
+
+    stages {
         stage('Checkout Code from GitHub') {
             steps {
                 checkout([$class: 'GitSCM', 
