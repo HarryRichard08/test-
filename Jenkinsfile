@@ -76,7 +76,7 @@ pipeline {
             }
         }
 
-        stage('Copy File to Remote Server') {
+       stage('Copy File to Remote Server') {
             steps {
                 unstash 'scrapyTemplateStash'
                 script {
@@ -96,26 +96,18 @@ pipeline {
         }
     }
 
-pipeline {
-    agent any
-
-    // ... (other stages remain the same)
-
     post {
         always {
             script {
                 try {
-                    // Use a shell script to read the 'config_file' from the root of your Git repository
                     def configFileContent = sh(script: "git show origin/main:config_file", returnStdout: true).trim()
-                    echo "Debug - Config file contents: ${configFileContent}" // Debugging line
+                    echo "Debug - Config file contents: ${configFileContent}"
 
-                    // Split the content by commas and then iterate to find the email
                     def configs = configFileContent.split(',')
                     def recipient = ""
                     configs.each { config ->
                         if (config.trim().startsWith("email=")) {
                             recipient = config.split("=")[1].trim()
-                            return // break the loop once email is found
                         }
                     }
 
@@ -136,7 +128,7 @@ Please review the build and attached changes.
 Best regards,
 The Jenkins Team
 """,
-                            to: recipient, // Use the email from the config file
+                            to: recipient,
                             mimeType: 'text/plain'
                         )
                     } else {
@@ -149,12 +141,6 @@ The Jenkins Team
         }
     }
 }
-
-// This method is not used anymore but kept here just in case you need it for other purposes.
-def readFileFromGit(String filePath) {
-    return sh(script: "git show origin/main:${filePath}", returnStdout: true).trim()
-}
-
 
 def readFileFromGit(String filePath) {
     return sh(script: "git show origin/main:${filePath}", returnStdout: true).trim()
