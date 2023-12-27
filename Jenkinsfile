@@ -101,7 +101,7 @@ pipeline {
             script {
                 try {
                     // Read the existing config file used for folder creation
-                    def configFileContent = readFileFromGit('path/to/config_file').trim()
+                    def configFileContent = readFileFromGit('config_file').trim() // Adjust if your config file has a different name
                     
                     // Extract the email from the config file
                     def emailPattern = ~/email\s*=\s*(.+)/
